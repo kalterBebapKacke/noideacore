@@ -22,5 +22,6 @@ class finaces:
             date = dates.current()
         self.sql.basic_write(self.tables[0], profit=number, date=date)
 
-    def graph(self):
-        pass
+    def graph_data(self):
+        data_json = {}
+        data = self.sql.basic_read()

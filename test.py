@@ -1,16 +1,9 @@
-a = [str(x) for x in range(2)]
+import base_python
+from dotenv import load_dotenv
+load_dotenv()
+import os
 
-print(', '.join(a))
 
-def test(a='1', *args, **kwargs):
-    print(a)
-    print(args)
-    print(kwargs)
-
-test('1', '15', b='33')
-
-for x in range(len(a)):
-    a[x] = f''
-    print(a[x])
-
-print(a)
+sql = base_python.better_SQL.SQL_Class()
+sql.login(password=os.environ['pasw_READ'], user=os.environ['pasw_READ'], database='homeserver', tables=['homeserver'])
+sql.basic_write()

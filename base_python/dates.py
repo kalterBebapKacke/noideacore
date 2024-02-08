@@ -10,8 +10,27 @@ def format_all(date):
     return datetime_object
 
 def format(date):
-    datetime_object = datetime.datetime.strptime(date, '%d-%m-%y')
-    return datetime_object
+    try:
+        datetime_object = datetime.datetime.strptime(date, '%d-%m-%y')
+        return datetime_object
+    except ValueError:
+        try:
+            datetime_object = datetime.datetime.strptime(date, '%d-%m-%y %H:%M:%S')
+            return datetime_object
+        except ValueError:
+            try:
+                datetime_object = datetime.datetime.strptime(date, '%y-%m-%d %H:%M:%S')
+                return datetime_object
+            except ValueError:
+                try:
+                    datetime_object = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f')
+                    return datetime_object
+                except ValueError:
+                    try:
+                        datetime_object = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+                        return datetime_object
+                    except Exception:
+                        print(date)
 
 def current():
     now = datetime.datetime.now()

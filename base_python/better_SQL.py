@@ -2,7 +2,7 @@ import time
 
 import mysql.connector
 import datetime
-import dates
+from . import dates
 
 class SQL_Class:
 
@@ -96,7 +96,6 @@ class SQL_Class:
         self.db.commit()
 
     def Execute_SQL_Command(self, command:str):
-        print(command)
         self.cursor.execute(command)
         return self.cursor.fetchall()
 
@@ -118,44 +117,33 @@ class auto_delete():
 
     def delete_if_too_old_date(self):
         dates_list = self.SQL.basic_read(None, self.colum)
-        dates_list = [dates.format_now(x[0]) for x in dates_list]
+        dates_list = [dates.format(x[0]) for x in dates_list]
         dates_delete = []
         for x in dates_list:
             if 'months' == self.Buffertime[0]:
-                if dates.add(x, months=self.Buffertime[1]) > dates.current():
+                if dates.add(x, months=self.Buffertime[1]) < dates.current():
                     dates_delete.append(x)
             if 'days' == self.Buffertime[0]:
-                if dates.add(x, days=self.Buffertime[1]) > dates.current():
+                if dates.add(x, days=self.Buffertime[1]) < dates.current():
                     dates_delete.append(x)
             if 'years' == self.Buffertime[0]:
-                if dates.add(x, years=self.Buffertime[1]) > dates.current():
+                if dates.add(x, years=self.Buffertime[1]) < dates.current():
                     dates_delete.append(x)
             if 'minutes' == self.Buffertime[0]:
-                if dates.add(x, minutes=self.Buffertime[1]) > dates.current():
+                if dates.add(x, minutes=self.Buffertime[1]) < dates.current():
                     dates_delete.append(x)
             if 'seconds' == self.Buffertime[0]:
-                if dates.add(x, seconds=self.Buffertime[1]) > dates.current():
+                if dates.add(x, seconds=self.Buffertime[1]) < dates.current():
                     dates_delete.append(x)
             if 'hours' == self.Buffertime[0]:
-                if dates.add(x, hours=self.Buffertime[1]) > dates.current():
+                if dates.add(x, hours=self.Buffertime[1]) < dates.current():
                     dates_delete.append(x)
+        print(dates_delete)
         for x in dates_delete:
             self.SQL.Execute_SQL_Command(f"DELETE FROM `{self.SQL.database}`.`{self.tabel}` WHERE (`{self.colum}` = '{x}')")
-            self.SQL.db.commit()
+        self.SQL.db.commit()
 
 
 
     def run(self):
         pass
-
-if __name__ == '__main__':
-    s = SQL_Class()
-    s.login(password='Write_SQL_nowww123!5', user='WRITE', database='homeserver', tables=['cardmarket'])
-    s.connect()
-    s.set_tabels(['auth_tokens'])
-    dates_list = s.basic_read(None, 'date')
-    now = datetime.datetime.now()
-    #print(s.basic_write(None, token='2', token2='33', date=now, perm_lvl="0"))
-    time.sleep(5)
-    a = auto_delete('auth_tokens', 'date', ['seconds', 2], s)
-    a.delete_if_too_old_date()

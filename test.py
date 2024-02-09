@@ -1,9 +1,17 @@
-import base_python
-from dotenv import load_dotenv
-load_dotenv()
-import os
+import multiprocessing
+import time
+from multiprocessing import freeze_support
 
 
-sql = base_python.better_SQL.SQL_Class()
-sql.login(password=os.environ['pasw_READ'], user=os.environ['pasw_READ'], database='homeserver', tables=['homeserver'])
-sql.basic_write()
+def dor_smt():
+    time.sleep(2)
+    return "hello"
+
+
+
+if __name__ == '__main__':
+    freeze_support()
+    p = multiprocessing.Process(target=dor_smt)
+    p.start()
+    time.sleep(1)
+    p.terminate()

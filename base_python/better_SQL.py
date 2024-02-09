@@ -1,8 +1,8 @@
 import time
-
 import mysql.connector
 import datetime
 from . import dates
+import multiprocessing
 
 class SQL_Class:
 
@@ -110,10 +110,12 @@ class auto_delete():
         self.tabel = tabel
         self.colum = colum
         self.Buffertime = Buffertime
+        self.Process = None
         self.setup()
 
     def setup(self):
         self.SQL.set_tabels([self.tabel])
+        self.Process = multiprocessing.Process(target=self.exe)
 
     def delete_if_too_old_date(self):
         dates_list = self.SQL.basic_read(None, self.colum)
@@ -143,7 +145,17 @@ class auto_delete():
             self.SQL.Execute_SQL_Command(f"DELETE FROM `{self.SQL.database}`.`{self.tabel}` WHERE (`{self.colum}` = '{x}')")
         self.SQL.db.commit()
 
-
+    def exe(self):
+        while True:
+            try:
+                self.delete_if_too_old_date()
+            except Exception:
+                print(Exception)
 
     def run(self):
-        pass
+        multiprocessing.freeze_support()
+        self.Process.start()
+
+    def stop(self):
+        self.Process.terminate()
+

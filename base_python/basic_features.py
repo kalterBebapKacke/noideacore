@@ -13,3 +13,7 @@ def path_join(path1, path2):
 
 def open_browser_with_url(url:str):
     webbrowser.open(url)
+
+def if_directory_not_exists(dir:str):
+    if not os.path.exists(dir):
+        os.makedirs(dir)

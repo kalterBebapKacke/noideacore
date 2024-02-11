@@ -92,10 +92,11 @@ class SQL_Class:
         colums = ', '.join(colums)
         values = ', '.join(values)
         Abfrage = f'INSERT INTO {tabels_str} ({colums}) VALUES ({values})'
-        self.cursor.execute(Abfrage)
+        self.Execute_SQL_Command(Abfrage)
         self.db.commit()
 
     def Execute_SQL_Command(self, command:str):
+        print(command)
         self.cursor.execute(command)
         return self.cursor.fetchall()
 

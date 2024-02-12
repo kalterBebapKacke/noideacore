@@ -33,6 +33,7 @@ class SQL_Class:
         self.user = user
         self.database = database
         self.tabels = tables
+        self.connect()
 
     def connect(self):
         self.db = mysql.connector.connect(

@@ -21,6 +21,7 @@ class process_data:
         for x in [x for x in data.keys()]:
             data[x] = sorted(data[x], key=lambda x: x[-1])
         return data
+
     def process_dates(self):
         min_data, max_data = self.seperate_dates()
         dates = [min_data]

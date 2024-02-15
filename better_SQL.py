@@ -96,6 +96,19 @@ class SQL_Class:
         self.Execute_SQL_Command(Abfrage)
         self.db.commit()
 
+    def basic_delete(self, tabels=None, **kwargs):
+        if tabels is None:
+            tabels = self.tabels
+        for x in range(len(tabels)):
+            tabels[x] = f'{self.database}.{tabels[x]}'
+        tabels_str = tabels[0]
+        elements = list()
+        for x in kwargs:
+            elements.append(f"{x} = '{kwargs[x]}'")
+        elements = ' and '.join(elements)
+        Abfrage = f'DELETE FROM {tabels_str} WHERE {elements}'
+        print(Abfrage)
+
     def Execute_SQL_Command(self, command:str):
         print(command)
         self.cursor.execute(command)

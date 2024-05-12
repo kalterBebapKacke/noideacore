@@ -17,3 +17,9 @@ def open_browser_with_url(url:str):
 def if_directory_not_exists(dir:str):
     if not os.path.exists(dir):
         os.makedirs(dir)
+
+def string_in_list(string:str):
+    List = string.split(', ')
+    List[0] = List[0][List[0].find('[')+1:]
+    List[-1] = List[-1][:List[-1].find(']')]
+    return List

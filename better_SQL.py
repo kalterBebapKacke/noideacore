@@ -50,6 +50,14 @@ class SQL_Class:
         else:
             return True
 
+    def reset_auto_increment(self):
+        self.Execute_SQL_Command(f'ALTER TABLE `{self.database}`.`{self.tabels[0]}`  AUTO_INCREMENT = 1')
+        self.db.commit()
+
+    def clear_table(self):
+        self.Execute_SQL_Command(f'DELETE FROM `{self.database}`.`{self.tabels[0]}`')
+        self.db.commit()
+
     def basic_read(self, tabels=None, *args, **kwargs):
         if not self.ifconnected():
             raise NotConnected
@@ -108,7 +116,7 @@ class SQL_Class:
             elements.append(f"{x} = '{kwargs[x]}'")
         elements = ' and '.join(elements)
         Abfrage = f'DELETE FROM {tabels_str} WHERE {elements}'
-        self.Execute_SQL_Command(Abfrage)#
+        self.Execute_SQL_Command(Abfrage)
         self.db.commit()
 
     def Execute_SQL_Command(self, command:str):
@@ -175,4 +183,3 @@ class auto_delete():
 
     def stop(self):
         self.Process.terminate()
-

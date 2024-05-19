@@ -3,10 +3,15 @@ import mysql.connector
 import datetime
 from . import dates
 import multiprocessing
+import sqlite3
+
+
+modes = ['mysql', 'sqlite']
 
 class SQL_Class:
 
-    def __init__(self):
+    def __init__(self, mode='mysql'):
+        self.mode = mode
         self.db = None
         self.cursor = None
         self.tabels = []
@@ -15,33 +20,32 @@ class SQL_Class:
         self.user = ''
         self.password = ''
 
-    def set_host(self, name:str):
-        self.host = name
-    def set_login(self, user:str, password:str):
-        self.password = password
-        self.user = user
+    def __del__(self):
+        self.cursor.close()
+        self.db.close()
 
-    def set_tabels(self, tables:list):
-        self.tabels = tables
-
-    def set_database(self, name:str):
-        self.database = name
-
-    def login(self,  user:str, password:str, database:str, tables:list, host_name:str = 'localhost'):
+    def login(self, user:str='', password:str='', database:str='', tables:list='', host_name:str = 'localhost'):
         self.host = host_name
         self.password = password
         self.user = user
         self.database = database
         self.tabels = tables
-        self.connect()
+        if self.mode == modes[0]:
+            self.connect_mysql()
+        if self.mode == modes[1]:
+            self.connect_sqlite()
 
-    def connect(self):
+    def connect_mysql(self):
         self.db = mysql.connector.connect(
             host=self.host,
             user=self.user,
             password=self.password,
             database=self.database,
         )
+        self.cursor = self.db.cursor()
+
+    def connect_sqlite(self):
+        self.db = sqlite3.connect(self.database)
         self.cursor = self.db.cursor()
 
     def ifconnected(self):
@@ -139,7 +143,7 @@ class auto_delete():
         self.setup()
 
     def setup(self):
-        self.SQL.set_tabels([self.tabel])
+        self.SQL.tabels = [self.tabel]
         self.Process = multiprocessing.Process(target=self.exe)
 
     def delete_if_too_old_date(self):

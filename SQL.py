@@ -1,166 +1,189 @@
+import time
 import mysql.connector
-import os
-from dotenv import load_dotenv
-from . import com
-load_dotenv()
-class SQL_Abfrage:
+import datetime
+from . import dates
+import multiprocessing
+import sqlite3
 
-    def __init__(self, host="localhost", user="root", password=os.environ["PASSWORD"], database="homeserver",):
+
+modes = ['mysql', 'sqlite']
+
+class SQL_Class:
+
+    def __init__(self, mode='mysql'):
+        self.mode = mode
+        self.db = None
+        self.cursor = None
+        self.tabels = []
+        self.database = ''
+        self.host = 'localhost'
+        self.user = ''
+        self.password = ''
+
+    def __del__(self):
+        self.cursor.close()
+        self.db.close()
+
+    def login(self, user:str='', password:str='', database:str='', tables:list='', host_name:str = 'localhost'):
+        self.host = host_name
+        self.password = password
+        self.user = user
         self.database = database
+        self.tabels = tables
+        if self.mode == modes[0]:
+            self.connect_mysql()
+        if self.mode == modes[1]:
+            self.connect_sqlite()
+
+    def connect_mysql(self):
         self.db = mysql.connector.connect(
-            host=host,
-            user=user,
-            password=password,
-            database=database,
+            host=self.host,
+            user=self.user,
+            password=self.password,
+            database=self.database,
         )
         self.cursor = self.db.cursor()
 
+    def connect_sqlite(self):
+        self.db = sqlite3.connect(self.database)
+        self.cursor = self.db.cursor()
 
-    def Execute_Command(self, Abfrage, Additional_Info=None):
-        if Additional_Info == None:
-            self.cursor.execute(Abfrage)
+    def ifconnected(self):
+        if self.cursor == '':
+            return False
         else:
-            self.cursor.execute(Abfrage, Additional_Info)
-        return self.cursor
+            return True
 
+    def reset_auto_increment(self):
+        self.Execute_SQL_Command(f'ALTER TABLE `{self.database}`.`{self.tabels[0]}`  AUTO_INCREMENT = 1')
+        self.db.commit()
 
-    def Describe_Tabel(self, Tabel):
-        self.cursor.execute("DESCRIBE "+Tabel)
-        return self.cursor
+    def clear_table(self):
+        self.Execute_SQL_Command(f'DELETE FROM `{self.database}`.`{self.tabels[0]}`')
+        self.db.commit()
 
-
-    def Show_Tabels(self):
-        self.cursor.execute("SHOW TABLES")
-        LIST = list()
-        for x in self.cursor:
-            LIST.append(x)
-        return LIST
-
-
-    def SQL_Return_Too_List(self, SQL_Return, singel=True):
-        if singel==True:
-            list1 = []
-            var = list(SQL_Return)
-            for x in var:
-                var2 = list(x)
-                list1.append(var2[0])
-            return list1
+    def basic_read(self, tabels=None, *args, **kwargs):
+        if not self.ifconnected():
+            raise NotConnected
+        if tabels is None:
+            tabels = [x for x in self.tabels]
+        for x in range(len(tabels)):
+            tabels[x] = f'{self.database}.{tabels[x]}'
+        tabels_str = ', '.join(tabels)
+        if len(args) == 0:
+            select = '*'
         else:
-            list1 = []
-            var = list(SQL_Return)
-            for x in var:
-                list2 = []
-                for xx in x:
-                    list2.append(xx)
-                list1.append(list2)
-            return list1
-    def Return_In_List(self, Abfrage, Additional_Info=None, singel=True):
-        var = self.Execute_Command(Abfrage, Additional_Info)
-        return self.SQL_Return_Too_List(var, singel)
+            select = ', '.join(args)
+        elements = []
+        for x in kwargs:
+            elements.append(f"{x} = '{kwargs[x]}'")
+        elements = ' and '.join(elements)
+        if elements == '':
+            Abfrage = f'SELECT {select} FROM {tabels_str}'
+        else:
+            Abfrage = f'SELECT {select} FROM {tabels_str} WHERE {elements}'
+        Return = self.Execute_SQL_Command(Abfrage)
+        return Return
 
 
-    def Print_Info_SQL(self, Info):
-        for x in Info:
-            print(x)
+    def basic_write(self, tabels=None, **kwargs):
+        if not self.ifconnected():
+            raise NotConnected
+        if tabels is None:
+            tabels = [x for x in self.tabels]
+        for x in range(len(tabels)):
+            tabels[x] = f'{self.database}.{tabels[x]}'
+        tabels_str = tabels[0]
+        colums = []
+        for x in kwargs:
+            colums.append(x)
+        values = []
+        for x in kwargs:
+            values.append(kwargs[x])
+        for x in range(len(values)):
+            values[x] = f"'{values[x]}'"
+        colums = ', '.join(colums)
+        values = ', '.join(values)
+        Abfrage = f'INSERT INTO {tabels_str} ({colums}) VALUES ({values})'
+        self.Execute_SQL_Command(Abfrage)
+        self.db.commit()
+
+    def basic_delete(self, tabels=None, **kwargs):
+        if tabels is None:
+            tabels = [x for x in self.tabels]
+        for x in range(len(tabels)):
+            tabels[x] = f'{self.database}.{tabels[x]}'
+        print(tabels)
+        tabels_str = tabels[0]
+        elements = list()
+        for x in kwargs:
+            elements.append(f"{x} = '{kwargs[x]}'")
+        elements = ' and '.join(elements)
+        Abfrage = f'DELETE FROM {tabels_str} WHERE {elements}'
+        self.Execute_SQL_Command(Abfrage)
+        self.db.commit()
+
+    def Execute_SQL_Command(self, command:str):
+        print(command)
+        self.cursor.execute(command)
+        return self.cursor.fetchall()
 
 
-    def Print_List(self, List):
-        for x in range(List.__len__()):
-            print(List[x])
+class NotConnected(Exception):
 
-'''
-'''
+    pass
+class auto_delete():
 
-
-class Tabel:
-
-    def __init__(self, tabel,  SQL:SQL_Abfrage, database='homeserver'):
-        self.database = database
-        self.tabel = tabel
+    def __init__(self, tabel:str, colum:str, Buffertime:list, SQL:SQL_Class = None): # Buffertime: [name:(days, months, years, minutes, seconds, hours), time:int]
         self.SQL = SQL
+        self.tabel = tabel
+        self.colum = colum
+        self.Buffertime = Buffertime
+        self.Process = None
+        self.setup()
 
-    #writes into sql tabel: key = value : colum = value
-    def basic_write(self, **kwargs):
-        #
-        colums = ''.join([f"`{x}`," for x in kwargs])
-        colums = colums[:len(colums)-1]
+    def setup(self):
+        self.SQL.tabels = [self.tabel]
+        self.Process = multiprocessing.Process(target=self.exe)
 
-        values = ''.join([f"'{kwargs[x]}'," for x in kwargs])
-        values = values[:len(values)-1]
-
-
-        self.SQL.cursor.execute(f"INSERT INTO `{self.database}`.`{self.tabel}` ({colums}) VALUES ({values})")
+    def delete_if_too_old_date(self):
+        dates_list = self.SQL.basic_read(None, self.colum)
+        dates_list = [dates.format(x[0]) for x in dates_list]
+        dates_delete = []
+        for x in dates_list:
+            if 'months' == self.Buffertime[0]:
+                if dates.add(x, months=self.Buffertime[1]) < dates.current():
+                    dates_delete.append(x)
+            if 'days' == self.Buffertime[0]:
+                if dates.add(x, days=self.Buffertime[1]) < dates.current():
+                    dates_delete.append(x)
+            if 'years' == self.Buffertime[0]:
+                if dates.add(x, years=self.Buffertime[1]) < dates.current():
+                    dates_delete.append(x)
+            if 'minutes' == self.Buffertime[0]:
+                if dates.add(x, minutes=self.Buffertime[1]) < dates.current():
+                    dates_delete.append(x)
+            if 'seconds' == self.Buffertime[0]:
+                if dates.add(x, seconds=self.Buffertime[1]) < dates.current():
+                    dates_delete.append(x)
+            if 'hours' == self.Buffertime[0]:
+                if dates.add(x, hours=self.Buffertime[1]) < dates.current():
+                    dates_delete.append(x)
+        print(dates_delete)
+        for x in dates_delete:
+            self.SQL.Execute_SQL_Command(f"DELETE FROM `{self.SQL.database}`.`{self.tabel}` WHERE (`{self.colum}` = '{x}')")
         self.SQL.db.commit()
 
-    #basic filter   args = colum ;  kwargs: where key = value
-    def filter_basic(self, *args, **kwargs):
-        # list to str
-        selected = str(args)[1:len(str(args))-2].replace("'", "")
-        #dicit to key = value and ...
-        where_info = [f"{x} = '{kwargs[x]}' and " for x in kwargs]
-        where_info = ''.join(where_info)
-        where_info = where_info[:len(where_info)-5]
+    def exe(self):
+        while True:
+            try:
+                self.delete_if_too_old_date()
+            except Exception:
+                print(Exception)
 
-        if kwargs != {}:
-            Query = f"SELECT {selected} FROM {self.database}.{self.tabel} WHERE {where_info}"
-        else:
-            Query = f"SELECT {selected} FROM {self.database}.{self.tabel}"
-        return self.SQL.Return_In_List(Query, singel=False)
+    def run(self):
+        multiprocessing.freeze_support()
+        self.Process.start()
 
-
-#SQL INFO is some sort of the django models; it creates the class Tabel for the mysql tabels, these can be accesed by the Information
-class SQL_INFO(com.comunication):
-
-    Information = {
-
-    }
-
-    def __init__(self, SQL:SQL_Abfrage):
-        self.SQL = SQL
-        self.database = self.SQL.database
-        self.Setup()
-
-    def Setup(self):
-        TABELS = self.SQL.Show_Tabels()
-        for x in TABELS:
-            self.Information[str(x[0])] = Tabel(str(x[0]),  self.SQL, self.database,)
-
-    #use to find the Tabel class and perform things on the tabel
-    def get_tabel_info(self, name):
-        return self.get(name)
-
-class profile:
-
-    def __init__(self):
-        self.profiles = dict()
-
-    def create_profile(self, name, user, password):
-        self.profiles[name] = [user, password]
-
-    def create_profile_WRITE(self, user, password):
-        self.profiles['WRITE'] = [user, password]
-
-    def create_profile_READ(self,user, password):
-        self.profiles['READ'] = [user, password]
-
-prof = profile()
-#setups a sql class in com(=communication), multi = if there can be multiple sql classes in the same com
-def sql_setup(com, database):
-
-    prof.create_profile('READ', os.environ['USER_READ'], os.environ['PASW_READ'])
-    prof.create_profile('WRITE', os.environ['USER_WRITE'], os.environ['PASW_WRITE'])
-
-    if not 'READ' in prof.profiles.keys() and not 'WRITE' in prof.profiles.keys():
-        raise NoSetupOfSqlProfiles
-    host = os.environ['HOST']
-
-
-    com[database] = {}
-
-    com[database]['SQL'] = SQL_Abfrage(host, prof.profiles['READ'][0], prof.profiles['READ'][1], database)
-    com[database]['SQL_WRITE'] = SQL_Abfrage(host, prof.profiles['WRITE'][0], prof.profiles['WRITE'][1], database)
-    com[database]['SQL_TABEL'] = SQL_INFO(com[database]['SQL_WRITE'])
-
-class NoSetupOfSqlProfiles(Exception):
-    pass
-
+    def stop(self):
+        self.Process.terminate()

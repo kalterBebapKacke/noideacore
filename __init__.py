@@ -1,4 +1,4 @@
-from . import better_SQL
+from . import sql
 from . import com
 from . import dates
 from . import encrypt

@@ -1,4 +1,4 @@
-# BPPY (Basic Package PYthon)
+# NoIdeaCore
 
 This Package offer mostly basic Python Functions like encrypting with sha256, using dates and other. The main reason to use this package is the sql.py, because it offers a simple to use sql class to 
 

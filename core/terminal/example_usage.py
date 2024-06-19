@@ -50,4 +50,3 @@ def example1():
     controller.set_start(terminal1)
     controller.run()
 
-example1()

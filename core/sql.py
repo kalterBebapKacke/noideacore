@@ -21,8 +21,11 @@ class SQL_Class:
         self.password = ''
 
     def __del__(self):
-        self.cursor.close()
-        self.db.close()
+        try:
+            self.cursor.close()
+            self.db.close()
+        except Exception:
+            print('')
 
     def login(self, user:str='', password:str='', database:str='', tables:list='', host_name:str = 'localhost'):
         self.host = host_name

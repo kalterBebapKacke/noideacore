@@ -71,7 +71,10 @@ class SQL_Class:
         if tabels is None:
             tabels = [x for x in self.tabels]
         for x in range(len(tabels)):
-            tabels[x] = f'{self.database}.{tabels[x]}'
+            if self.mode == 'mysql':
+                tabels[x] = f'{self.database}.{tabels[x]}'
+            else:
+                tabels[x] = f'{tabels[x]}'
         tabels_str = ', '.join(tabels)
         if len(args) == 0:
             select = '*'
@@ -95,7 +98,10 @@ class SQL_Class:
         if tabels is None:
             tabels = [x for x in self.tabels]
         for x in range(len(tabels)):
-            tabels[x] = f'{self.database}.{tabels[x]}'
+            if self.mode == 'mysql':
+                tabels[x] = f'{self.database}.{tabels[x]}'
+            else:
+                tabels[x] = f'{tabels[x]}'
         tabels_str = tabels[0]
         colums = []
         for x in kwargs:
@@ -115,7 +121,10 @@ class SQL_Class:
         if tabels is None:
             tabels = [x for x in self.tabels]
         for x in range(len(tabels)):
-            tabels[x] = f'{self.database}.{tabels[x]}'
+            if self.mode == 'mysql':
+                tabels[x] = f'{self.database}.{tabels[x]}'
+            else:
+                tabels[x] = f'{tabels[x]}'
         print(tabels)
         tabels_str = tabels[0]
         elements = list()

@@ -11,6 +11,8 @@ modes = ['mysql', 'sqlite']
 class SQL_Class:
 
     def __init__(self, mode='mysql'):
+        if mode not in modes:
+            raise NotSupportedMode
         self.mode = mode
         self.db = None
         self.cursor = None
@@ -25,7 +27,7 @@ class SQL_Class:
             self.cursor.close()
             self.db.close()
         except Exception:
-            print('')
+            pass
 
     def login(self, user:str='', password:str='', database:str='', tables:list='', host_name:str = 'localhost'):
         self.host = host_name
@@ -56,53 +58,59 @@ class SQL_Class:
             return False
         else:
             return True
-
-    def reset_auto_increment(self):
-        self.Execute_SQL_Command(f'ALTER TABLE `{self.database}`.`{self.tabels[0]}`  AUTO_INCREMENT = 1')
-        self.db.commit()
-
-    def clear_table(self):
-        self.Execute_SQL_Command(f'DELETE FROM `{self.database}`.`{self.tabels[0]}`')
-        self.db.commit()
-
-    def basic_read(self, tabels=None, *args, **kwargs):
-        if not self.ifconnected():
-            raise NotConnected
+        
+    def table_str(self, tabels=None, return_first=False):
         if tabels is None:
             tabels = [x for x in self.tabels]
         for x in range(len(tabels)):
             if self.mode == 'mysql':
                 tabels[x] = f'{self.database}.{tabels[x]}'
-            else:
+            if self.mode == 'sqlite':
                 tabels[x] = f'{tabels[x]}'
-        tabels_str = ', '.join(tabels)
+        if not return_first:
+            return ', '.join(tabels)
+        else:
+            return tabels[0]
+        
+    def select_str(self, *args):
         if len(args) == 0:
             select = '*'
         else:
             select = ', '.join(args)
-        elements = []
+        return select
+
+    def where_construct(self, **kwargs):
+        elements = list()
         for x in kwargs:
             elements.append(f"{x} = '{kwargs[x]}'")
         elements = ' and '.join(elements)
-        if elements == '':
+        return elements
+
+    def reset_auto_increment(self):
+        self.Execute_SQL_Command(f'ALTER TABLE `{self.table_str()}`  AUTO_INCREMENT = 1')
+        self.db.commit()
+
+    def clear_table(self):
+        self.Execute_SQL_Command(f'DELETE FROM `{self.table_str()}`')
+        self.db.commit()
+
+    def basic_read(self, tabels=None, *args, **kwargs):
+        if not self.ifconnected():
+            raise NotConnected
+        tabels_str = self.table_str(tabels)
+        select = self.select_str(*args)
+        elements = self.where_construct(**kwargs)
+        if kwargs == {}:
             Abfrage = f'SELECT {select} FROM {tabels_str}'
         else:
             Abfrage = f'SELECT {select} FROM {tabels_str} WHERE {elements}'
         Return = self.Execute_SQL_Command(Abfrage)
         return Return
 
-
     def basic_write(self, tabels=None, **kwargs):
         if not self.ifconnected():
             raise NotConnected
-        if tabels is None:
-            tabels = [x for x in self.tabels]
-        for x in range(len(tabels)):
-            if self.mode == 'mysql':
-                tabels[x] = f'{self.database}.{tabels[x]}'
-            else:
-                tabels[x] = f'{tabels[x]}'
-        tabels_str = tabels[0]
+        tabels_str = self.table_str(tabels, True)
         colums = []
         for x in kwargs:
             colums.append(x)
@@ -118,19 +126,10 @@ class SQL_Class:
         self.db.commit()
 
     def basic_delete(self, tabels=None, **kwargs):
-        if tabels is None:
-            tabels = [x for x in self.tabels]
-        for x in range(len(tabels)):
-            if self.mode == 'mysql':
-                tabels[x] = f'{self.database}.{tabels[x]}'
-            else:
-                tabels[x] = f'{tabels[x]}'
-        print(tabels)
-        tabels_str = tabels[0]
-        elements = list()
-        for x in kwargs:
-            elements.append(f"{x} = '{kwargs[x]}'")
-        elements = ' and '.join(elements)
+        if not self.ifconnected():
+            raise NotConnected
+        tabels_str = self.table_str(tabels, True)
+        elements = self.where_construct(**kwargs)
         Abfrage = f'DELETE FROM {tabels_str} WHERE {elements}'
         self.Execute_SQL_Command(Abfrage)
         self.db.commit()
@@ -140,10 +139,14 @@ class SQL_Class:
         self.cursor.execute(command)
         return self.cursor.fetchall()
 
-
 class NotConnected(Exception):
 
     pass
+
+class NotSupportedMode(Exception):
+
+    pass
+
 class auto_delete():
 
     def __init__(self, tabel:str, colum:str, Buffertime:list, SQL:SQL_Class = None): # Buffertime: [name:(days, months, years, minutes, seconds, hours), time:int]

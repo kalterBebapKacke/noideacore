@@ -5,22 +5,33 @@ from . import dates
 import multiprocessing
 import sqlite3
 
+def mysql(user='', password='', host='', database=''):
+    return SQL_Class(user=user, password=password, host=host, database=database)
+
+def sqlite3(path=''):
+    return SQL_Class('sqlite', path = path)
+
 
 modes = ['mysql', 'sqlite']
 
 class SQL_Class:
 
-    def __init__(self, mode='mysql'):
+    def __init__(self, mode='mysql', **kwargs):
         if mode not in modes:
             raise NotSupportedMode
         self.mode = mode
         self.db = None
         self.cursor = None
+
         self.tabels = []
         self.database = ''
         self.host = 'localhost'
         self.user = ''
         self.password = ''
+        self.path = ''
+
+        if kwargs != {}:
+            self.login(**kwargs)
 
     def __del__(self):
         try:
@@ -29,15 +40,17 @@ class SQL_Class:
         except Exception:
             pass
 
-    def login(self, user:str='', password:str='', database:str='', tables:list='', host_name:str = 'localhost'):
-        self.host = host_name
-        self.password = password
-        self.user = user
-        self.database = database
-        self.tabels = tables
-        if self.mode == modes[0]:
+    def login(self, **kwargs):
+        if self.mode == modes[0]:  
+            self.host = kwargs['host_name'] 
+            self.password = kwargs['password']
+            self.user = kwargs['user']
+            self.database = kwargs['database']
+            self.tabels = kwargs['tables']
             self.connect_mysql()
+
         if self.mode == modes[1]:
+            self.path = kwargs['path']
             self.connect_sqlite()
 
     def connect_mysql(self):
@@ -50,7 +63,7 @@ class SQL_Class:
         self.cursor = self.db.cursor()
 
     def connect_sqlite(self):
-        self.db = sqlite3.connect(self.database)
+        self.db = sqlite3.connect(self.path)
         self.cursor = self.db.cursor()
 
     def ifconnected(self):

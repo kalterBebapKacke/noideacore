@@ -1,5 +1,5 @@
 import time
-import mysql.connector
+import mysql.connector as mysql_connector
 import datetime
 from . import dates
 import multiprocessing
@@ -54,7 +54,7 @@ class SQL_Class:
             self.connect_sqlite()
 
     def connect_mysql(self):
-        self.db = mysql.connector.connect(
+        self.db = mysql_connector.connect(
             host=self.host,
             user=self.user,
             password=self.password,

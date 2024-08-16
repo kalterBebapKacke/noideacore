@@ -42,7 +42,7 @@ class SQL_Class:
 
     def login(self, **kwargs):
         if self.mode == modes[0]:  
-            self.host = kwargs['host_name'] 
+            self.host = kwargs['host'] 
             self.password = kwargs['password']
             self.user = kwargs['user']
             self.database = kwargs['database']

@@ -77,7 +77,7 @@ class SQL_Class:
             tabels = [x for x in self.tabels]
         for x in range(len(tabels)):
             if self.mode == 'mysql':
-                tabels[x] = f'{self.database}.{tabels[x]}'
+                tabels[x] = f'{tabels[x]}'
             if self.mode == 'sqlite':
                 tabels[x] = f'{tabels[x]}'
         if not return_first:

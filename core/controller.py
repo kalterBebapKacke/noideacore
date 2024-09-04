@@ -32,18 +32,20 @@ class run_controller():
         args = self.args_conv()
         pool = mp.Pool(process)
         output = pool.starmap(single, args)
+        print(output)
         for x in output:
+            print(x)
             if x[1] == '':
-                results.append[x[0]]
+                results.append(x[0])
             else:
-                exceptions.append[x[1]]
+                exceptions.append(x[1])
         self.exceptions = exceptions
         return results
 
     def args_conv(self):
         new_args = list()
         for x in self.args:
-            new_args.append(self.func, *x)
+            new_args.append((self.func, *x))
         return new_args
 
     def __call__(self, mp=False):

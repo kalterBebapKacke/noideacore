@@ -99,8 +99,18 @@ class SQL_Class:
         self.Execute_SQL_Command(Abfrage)
         self.db.commit()
 
+    def basic_update(self, tabels=None, changed:dict=(), **kwargs):
+        if not self.ifconnected():
+            raise NotConnected
+        tabels_str = self.table_str(tabels, True)
+        elements = self.where_construct(**kwargs)
+        changed = self.where_construct(**changed).replace('and', ',')
+        Abfrage = f'UPDATE {tabels_str} SET {changed} WHERE {elements}'
+        self.Execute_SQL_Command(Abfrage)
+        self.db.commit()
+
     def Execute_SQL_Command(self, command: str):
-        print(command)
+        #print(command)
         self.cursor.execute(command)
         return self.cursor.fetchall()
 
